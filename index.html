@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>이메일 빌더 – 동안기획</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', Arial, sans-serif; background: #f0f2f5; color: #2c2c2c; }
+
+  .app { display: flex; height: 100vh; }
+
+  /* 좌측 패널 */
+  .panel {
+    width: 360px; min-width: 360px;
+    background: #1a2e44;
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+  }
+  .panel-header {
+    padding: 28px 28px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .panel-header .logo {
+    font-size: 11px; letter-spacing: 2px; color: #7ea8c9;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .panel-header h1 { font-size: 18px; color: #fff; font-weight: 600; }
+  .panel-header p { font-size: 12px; color: #a0b8cc; margin-top: 4px; }
+
+  .panel-body { padding: 24px 28px; flex: 1; }
+
+  .field-group { margin-bottom: 24px; }
+  .field-group label {
+    display: block; font-size: 11px; font-weight: 600;
+    letter-spacing: 1px; color: #7ea8c9;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .field-group input[type="text"] {
+    width: 100%; padding: 11px 14px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px; color: #fff;
+    font-size: 13px; outline: none;
+    transition: border 0.2s;
+  }
+  .field-group input[type="text"]::placeholder { color: rgba(255,255,255,0.3); }
+  .field-group input[type="text"]:focus { border-color: #7ea8c9; background: rgba(255,255,255,0.1); }
+  .field-hint { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 5px; }
+
+  .img-preview-thumb {
+    width: 100%; height: 80px; object-fit: cover;
+    border-radius: 4px; margin-top: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    display: none; background: rgba(0,0,0,0.2);
+  }
+  .img-status {
+    font-size: 11px; margin-top: 5px; display: none;
+  }
+  .img-status.ok { color: #5cb85c; }
+  .img-status.err { color: #e07070; }
+
+  .divider-line {
+    border: none; border-top: 1px solid rgba(255,255,255,0.1);
+    margin: 8px 0 24px;
+  }
+
+  .btn-generate {
+    width: 100%; padding: 14px;
+    background: #2e5c8a; color: #fff;
+    border: none; border-radius: 4px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; letter-spacing: 0.5px;
+    transition: background 0.2s;
+  }
+  .btn-generate:hover { background: #3a72a8; }
+
+  .btn-download {
+    width: 100%; padding: 12px;
+    background: transparent; color: #7ea8c9;
+    border: 1px solid rgba(126,168,201,0.4);
+    border-radius: 4px; font-size: 13px;
+    cursor: pointer; margin-top: 10px;
+    transition: all 0.2s;
+  }
+  .btn-download:hover { background: rgba(126,168,201,0.1); color: #fff; }
+
+  .notice {
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px; padding: 14px;
+    font-size: 12px; color: #a0b8cc;
+    line-height: 1.7; margin-top: 20px;
+  }
+  .notice strong { color: #7ea8c9; }
+
+  /* 우측 미리보기 */
+  .preview-wrap {
+    flex: 1; overflow-y: auto;
+    background: #e8e5e0;
+    padding: 40px 24px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .preview-label {
+    font-size: 11px; letter-spacing: 2px; color: #999;
+    text-transform: uppercase; margin-bottom: 16px; align-self: flex-start;
+    padding-left: 4px;
+  }
+  #preview-frame {
+    width: 100%; max-width: 640px;
+    background: #fff;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.12);
+    border: none;
+    min-height: 600px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 좌측 패널 -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="logo">Dongan Planning</div>
+      <h1>이메일 빌더</h1>
+      <p>URL을 입력하면 이메일이 완성됩니다</p>
+    </div>
+    <div class="panel-body">
+
+      <div class="field-group">
+        <label>📎 제안서 표지 이미지 URL</label>
+        <input type="text" id="coverImgUrl" placeholder="https://i.ibb.co/..." oninput="previewThumb('coverImgUrl','coverThumb','coverStatus')"/>
+        <img id="coverThumb" class="img-preview-thumb" alt="표지 미리보기"/>
+        <div id="coverStatus" class="img-status"></div>
+        <div class="field-hint">이미지 URL을 붙여넣으면 미리보기가 표시됩니다</div>
+      </div>
+
+      <div class="field-group">
+        <label>🔗 제안서 클릭 이동 URL</label>
+        <input type="text" id="proposalUrl" placeholder="https://drive.google.com/..." oninput="updatePreview()"/>
+        <div class="field-hint">이미지 및 버튼 클릭 시 이동할 링크</div>
+      </div>
+
+      <hr class="divider-line"/>
+
+      <div class="field-group">
+        <label>👤 명함 이미지 URL</label>
+        <input type="text" id="cardImgUrl" placeholder="https://i.ibb.co/..." oninput="previewThumb('cardImgUrl','cardThumb','cardStatus')"/>
+        <img id="cardThumb" class="img-preview-thumb" alt="명함 미리보기"/>
+        <div id="cardStatus" class="img-status"></div>
+        <div class="field-hint">이미지 URL을 붙여넣으면 미리보기가 표시됩니다</div>
+      </div>
+
+      <hr class="divider-line"/>
+
+      <button class="btn-generate" onclick="updatePreview()">🔄 미리보기 업데이트</button>
+      <button class="btn-download" onclick="downloadHTML()">⬇ HTML 다운로드</button>
+
+      <div class="notice">
+        <strong>이미지 URL 얻는 법</strong><br/>
+        imgbb.com에서 이미지 업로드 후<br/>
+        <strong>"Direct link"</strong> 복사<br/>
+        (https://i.ibb.co/... 형태)
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 우측 미리보기 -->
+  <div class="preview-wrap">
+    <div class="preview-label">LIVE PREVIEW</div>
+    <iframe id="preview-frame" scrolling="no"></iframe>
+  </div>
+
+</div>
+
+<script>
+// 이메일 HTML 생성 함수
+function generateEmailHTML(coverImg, proposalLink, cardImg) {
+  const coverSrc  = coverImg   || 'https://via.placeholder.com/600x340/1a2e44/7ea8c9?text=표지+이미지+URL+입력';
+  const cardSrc   = cardImg    || 'https://via.placeholder.com/504x240/f7f4f0/aaaaaa?text=명함+이미지+URL+입력';
+  const linkHref  = proposalLink || '#';
+
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>마케팅 제안 – 동안기획</title>
+  <style type="text/css">
+    body { margin:0; padding:0; background-color:#f0ede8; }
+    table { border-spacing:0; }
+    td { padding:0; }
+    img { border:0; display:block; }
+    a { text-decoration:none; }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#f0ede8;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0ede8;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff; max-width:600px;">
+
+          <!-- 헤더 -->
+          <tr>
+            <td style="background-color:#1a2e44; padding:44px 48px 36px 48px;">
+              <p style="margin:0 0 12px 0; font-family:Arial,sans-serif; font-size:10px; font-weight:bold; letter-spacing:3px; color:#7ea8c9; text-transform:uppercase;">Hospital Marketing Proposal</p>
+              <p style="margin:0 0 8px 0; font-family:Georgia,serif; font-size:24px; font-weight:bold; color:#ffffff; line-height:1.5;">병원 온라인 마케팅,<br/>지금이 바로 점검할 때입니다</p>
+              <p style="margin:0; font-family:Arial,sans-serif; font-size:13px; color:#a0b8cc; line-height:1.6;">2080자연이치과의원 맞춤 마케팅 제안서</p>
+            </td>
+          </tr>
+
+          <!-- 표지 이미지 (클릭 가능) -->
+          <tr>
+            <td style="background-color:#0f1e30;">
+              <a href="${linkHref}" target="_blank" style="display:block;">
+                <img src="${coverSrc}" width="600" alt="2080자연이치과의원 마케팅 제안서 목차" style="width:100%; max-width:600px; display:block;" />
+              </a>
+            </td>
+          </tr>
+
+          <!-- 버튼 -->
+          <tr>
+            <td align="center" style="background-color:#1a2e44; padding:20px 48px;">
+              <a href="${linkHref}" target="_blank"
+                style="display:inline-block; background-color:#2e5c8a; color:#ffffff; font-family:Arial,sans-serif; font-size:13px; font-weight:bold; letter-spacing:1px; padding:13px 36px; border-radius:2px; text-decoration:none;">
+                ▶&nbsp;&nbsp;마케팅 제안서 보기
+              </a>
+            </td>
+          </tr>
+
+          <!-- 첨부파일 안내 -->
+          <tr>
+            <td style="background-color:#ddeaf4; border-left:4px solid #1a2e44; padding:14px 48px;">
+              <p style="margin:0; font-family:Arial,sans-serif; font-size:12px; color:#4a6a82; line-height:1.7;">
+                <strong style="color:#1a2e44;">#. 첨부파일 내려받기</strong>를 통해서도 마케팅 제안서를 확인하실 수 있습니다.
+              </p>
+            </td>
+          </tr>
+
+          <!-- 본문 -->
+          <tr>
+            <td style="padding:38px 48px 0 48px;">
+              <p style="margin:0 0 20px 0; font-family:Arial,sans-serif; font-size:14px; color:#2c2c2c; line-height:1.9;">
+                안녕하세요, <strong>원장님</strong>.<br/>
+                동안기획에서 병원 콘텐츠 운영을 담당하고 있는 <strong>강민서 차장</strong>입니다.<br/><br/>
+                병원 온라인 마케팅 운영과 관련해 원장님들께서 실제로 많이 고민하시는 부분들이 있어,
+                간단히 참고하실 수 있는 마케팅 제안 자료를 전달드립니다.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="border-top:1px solid #e8e4de; padding:0; height:1px; font-size:0; line-height:0;">&nbsp;</td></tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- 강조 박스 -->
+          <tr>
+            <td style="padding:24px 48px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#f7f4f0; padding:20px 24px;">
+                    <p style="margin:0; font-family:Arial,sans-serif; font-size:13px; color:#3a3a3a; line-height:1.9;">
+                      최근 병원 마케팅은 <strong style="color:#1a2e44;">검색 기반 유입</strong>,
+                      <strong style="color:#1a2e44;">블로그 콘텐츠</strong>,
+                      <strong style="color:#1a2e44;">광고 채널 운영</strong> 등을 어떻게 설계하느냐에 따라
+                      환자 유입에 큰 차이가 발생하고 있습니다.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- 마무리 인사 -->
+          <tr>
+            <td style="padding:0 48px 38px 48px;">
+              <p style="margin:0; font-family:Arial,sans-serif; font-size:13px; color:#3a3a3a; line-height:1.9;">
+                첨부드린 자료 한번 읽어보시고, 혹시 향후 마케팅 운영에 대해 검토하고 계신 부분이 있으시다면
+                편하게 말씀 주시면 감사하겠습니다.<br/><br/>
+                읽어주셔서 감사합니다.
+              </p>
+            </td>
+          </tr>
+
+          <!-- 명함 -->
+          <tr>
+            <td style="background-color:#f7f4f0; border-top:1px solid #e8e4de; padding:28px 48px;">
+              <p style="margin:0 0 14px 0; font-family:Arial,sans-serif; font-size:11px; color:#aaa49c; letter-spacing:1px;">CONTACT</p>
+              <img src="${cardSrc}" width="504" alt="강민서 차장 명함 – 동안기획" style="width:100%; max-width:504px; display:block; border:1px solid #e0dbd4;" />
+            </td>
+          </tr>
+
+          <!-- 푸터 -->
+          <tr>
+            <td style="background-color:#1a2e44; padding:16px 48px;">
+              <p style="margin:0; font-family:Arial,sans-serif; font-size:11px; color:#7ea8c9; letter-spacing:1px; text-transform:uppercase;">동안기획 DONGAN PLANNING</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+// 썸네일 미리보기
+function previewThumb(inputId, thumbId, statusId) {
+  const url = document.getElementById(inputId).value.trim();
+  const thumb = document.getElementById(thumbId);
+  const status = document.getElementById(statusId);
+
+  if (!url) {
+    thumb.style.display = 'none';
+    status.style.display = 'none';
+    updatePreview();
+    return;
+  }
+  thumb.src = url;
+  thumb.style.display = 'block';
+  thumb.onload = () => {
+    status.textContent = '✓ 이미지 확인됨';
+    status.className = 'img-status ok';
+    status.style.display = 'block';
+    updatePreview();
+  };
+  thumb.onerror = () => {
+    status.textContent = '✗ 이미지를 불러올 수 없습니다';
+    status.className = 'img-status err';
+    status.style.display = 'block';
+  };
+}
+
+// 미리보기 업데이트
+function updatePreview() {
+  const coverImg    = document.getElementById('coverImgUrl').value.trim();
+  const proposalUrl = document.getElementById('proposalUrl').value.trim();
+  const cardImg     = document.getElementById('cardImgUrl').value.trim();
+
+  const html = generateEmailHTML(coverImg, proposalUrl, cardImg);
+  const frame = document.getElementById('preview-frame');
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+
+  // iframe 높이 자동 조절
+  setTimeout(() => {
+    frame.style.height = (doc.body.scrollHeight + 40) + 'px';
+  }, 300);
+}
+
+// HTML 다운로드
+function downloadHTML() {
+  const coverImg    = document.getElementById('coverImgUrl').value.trim();
+  const proposalUrl = document.getElementById('proposalUrl').value.trim();
+  const cardImg     = document.getElementById('cardImgUrl').value.trim();
+
+  const html = generateEmailHTML(coverImg, proposalUrl, cardImg);
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'marketing_email.html';
+  a.click();
+}
+
+// 초기 미리보기 렌더링
+window.onload = () => updatePreview();
+</script>
+</body>
+</html>
