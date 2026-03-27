@@ -110,7 +110,8 @@
     background: #fff;
     box-shadow: 0 4px 32px rgba(0,0,0,0.12);
     border: none;
-    min-height: 600px;
+    height: 1200px;
+    overflow: hidden;
   }
 </style>
 </head>
@@ -342,10 +343,14 @@ function updatePreview() {
   const doc = frame.contentDocument || frame.contentWindow.document;
   doc.open(); doc.write(html); doc.close();
 
-  // iframe 높이 자동 조절
-  setTimeout(() => {
-    frame.style.height = (doc.body.scrollHeight + 40) + 'px';
-  }, 300);
+  // 이미지 로딩 완료 후 높이 재조절
+  function resizeFrame() {
+    const h = doc.body ? doc.body.scrollHeight : 1200;
+    frame.style.height = (h + 60) + 'px';
+  }
+  setTimeout(resizeFrame, 300);
+  setTimeout(resizeFrame, 800);
+  setTimeout(resizeFrame, 1500);
 }
 
 // HTML 다운로드
