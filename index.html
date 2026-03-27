@@ -110,7 +110,7 @@
     background: #fff;
     box-shadow: 0 4px 32px rgba(0,0,0,0.12);
     border: none;
-    height: 1200px;
+    height: 2400px;
     overflow: hidden;
   }
 </style>
@@ -343,14 +343,14 @@ function updatePreview() {
   const doc = frame.contentDocument || frame.contentWindow.document;
   doc.open(); doc.write(html); doc.close();
 
-  // 이미지 로딩 완료 후 높이 재조절
+  // 이미지 포함 전체 로딩 후 높이 조절
   function resizeFrame() {
-    const h = doc.body ? doc.body.scrollHeight : 1200;
-    frame.style.height = (h + 60) + 'px';
+    try {
+      const h = doc.documentElement.scrollHeight || doc.body.scrollHeight;
+      if (h > 100) frame.style.height = (h + 80) + 'px';
+    } catch(e) {}
   }
-  setTimeout(resizeFrame, 300);
-  setTimeout(resizeFrame, 800);
-  setTimeout(resizeFrame, 1500);
+  [400, 1000, 2000, 3000].forEach(t => setTimeout(resizeFrame, t));
 }
 
 // HTML 다운로드
