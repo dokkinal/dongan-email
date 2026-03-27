@@ -145,7 +145,7 @@
 
       <div class="field-group">
         <label>👤 명함 이미지 URL</label>
-        <input type="text" id="cardImgUrl" placeholder="https://i.ibb.co/..." oninput="previewThumb('cardImgUrl','cardThumb','cardStatus')"/>
+        <input type="text" id="cardImgUrl" placeholder="https://i.ibb.co/..." oninput="saveCardUrl()"/>
         <img id="cardThumb" class="img-preview-thumb" alt="명함 미리보기"/>
         <div id="cardStatus" class="img-status"></div>
         <div class="field-hint">이미지 URL을 붙여넣으면 미리보기가 표시됩니다</div>
@@ -305,6 +305,22 @@ function generateEmailHTML(coverImg, proposalLink, cardImg) {
 </html>`;
 }
 
+// 저장된 값 불러오기
+function loadSaved() {
+  const cardUrl = localStorage.getItem('cardImgUrl');
+  if (cardUrl) {
+    document.getElementById('cardImgUrl').value = cardUrl;
+    previewThumb('cardImgUrl', 'cardThumb', 'cardStatus');
+  }
+}
+
+// 명함 URL 저장 (입력할 때마다)
+function saveCardUrl() {
+  const val = document.getElementById('cardImgUrl').value.trim();
+  if (val) localStorage.setItem('cardImgUrl', val);
+  previewThumb('cardImgUrl', 'cardThumb', 'cardStatus');
+}
+
 // 썸네일 미리보기
 function previewThumb(inputId, thumbId, statusId) {
   const url = document.getElementById(inputId).value.trim();
@@ -368,7 +384,7 @@ function downloadHTML() {
 }
 
 // 초기 미리보기 렌더링
-window.onload = () => updatePreview();
+window.onload = () => { loadSaved(); updatePreview(); };
 </script>
 </body>
 </html>
